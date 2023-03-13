@@ -57,9 +57,9 @@ BINUTILS_URL="https://ftp.gnu.org/gnu/binutils/${BINUTILS_ARCHIVE}"
 BINUTILS_DIR="binutils-${BINUTILS_VERSION}"
 
 # gcc
-GCC_VERSION="10.2.0"
+GCC_VERSION="12.2.0"
 GCC_ARCHIVE="gcc-${GCC_VERSION}.tar.gz"
-GCC_SHA512SUM="5118865a85e70ba58702bb3615d3d9e44dcdbc725fdb71124da78dd412388c5fc367378771bf82fed4d6e2c62fde4c7c362ec1f8ddcae762a2af957f2d605520"
+GCC_SHA512SUM="36ab2267540f205b148037763b3806558e796d564ca7831799c88abcf03393c6dc2cdc9d53e8f094f6dc1245e47a406e1782604eb9d119410d406032f59c1544"
 GCC_URL="https://gcc.gnu.org/pub/gcc/releases/gcc-${GCC_VERSION}/${GCC_ARCHIVE}"
 GCC_DIR="gcc-${GCC_VERSION}"
 
@@ -86,7 +86,23 @@ CPU="m68000"
 TARGET=${GCC_ABI}
 PREFIX="${TARGET}-"
 PROGRAM_PREFIX=${PREFIX}
-NUM_PROC=$(nproc)
+case `uname -s` in
+    Darwin)
+	NUM_PROC=$(gnproc)
+	REALPATH=grealpath
+	MAKE=make
+	;;
+    FreeBSD)
+	NUM_PROC=$(gnproc)
+	REALPATH=grealpath
+	MAKE=gmake
+	;;
+    *)
+	NUM_PROC=$(nproc)
+	REALPATH=realpath
+	MAKE=make
+	;;
+esac
 ROOT_DIR="${PWD}"
 INSTALL_DIR="${ROOT_DIR}/m68k-toolchain"
 DOWNLOAD_DIR="${ROOT_DIR}/${GCC_BUILD_DIR}/download"
@@ -162,11 +178,11 @@ ${SRC_DIR}/${BINUTILS_DIR}/configure \
     --enable-interwork \
     --enable-multilib \
 
-make -j${NUM_PROC} 2<&1 | tee build.binutils.1.log
+${MAKE} -j${NUM_PROC} 2<&1 | tee build.binutils.1.log
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
 	exit 1;
 fi
-make install -j${NUM_PROC} 2<&1 | tee build.binutils.2.log
+${MAKE} install -j${NUM_PROC} 2<&1 | tee build.binutils.2.log
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
 	exit 1;
 fi
@@ -213,7 +229,7 @@ cd ${SRC_DIR}/${GCC_DIR}
 ./contrib/download_prerequisites
 
 cd ${BUILD_DIR}/${GCC_DIR}_stage1
-`realpath --relative-to=./ ${SRC_DIR}/${GCC_DIR}`/configure \
+`${REALPATH} --relative-to=./ ${SRC_DIR}/${GCC_DIR}`/configure \
     --prefix=${INSTALL_DIR} \
     --program-prefix=${PROGRAM_PREFIX} \
     --target=${TARGET} \
@@ -228,11 +244,11 @@ cd ${BUILD_DIR}/${GCC_DIR}_stage1
     --disable-shared \
     --disable-threads \
 
-make -j${NUM_PROC} all-gcc 2<&1 | tee build.gcc-stage1.1.log
+${MAKE} -j${NUM_PROC} all-gcc 2<&1 | tee build.gcc-stage1.1.log
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
 	exit 1;
 fi
-make install-gcc 2<&1 | tee build.gcc-stage1.2.log
+${MAKE} install-gcc 2<&1 | tee build.gcc-stage1.2.log
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
 	exit 1;
 fi
@@ -278,11 +294,11 @@ ${SRC_DIR}/${NEWLIB_DIR}/configure \
     --prefix=${INSTALL_DIR} \
     --target=${TARGET} \
 
-make -j${NUM_PROC} 2<&1 | tee build.newlib.1.log
+${MAKE} -j${NUM_PROC} 2<&1 | tee build.newlib.1.log
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
 	exit 1;
 fi
-make install | tee build.newlib.2.log
+${MAKE} install | tee build.newlib.2.log
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
 	exit 1;
 fi
@@ -302,7 +318,7 @@ cd ${ROOT_DIR}
 mkdir -p ${BUILD_DIR}/${GCC_DIR}_stage2
 
 cd ${BUILD_DIR}/${GCC_DIR}_stage2
-`realpath --relative-to=./ ${SRC_DIR}/${GCC_DIR}`/configure \
+`${REALPATH} --relative-to=./ ${SRC_DIR}/${GCC_DIR}`/configure \
     --prefix=${INSTALL_DIR} \
     --program-prefix=${PROGRAM_PREFIX} \
     --target=${TARGET} \
@@ -316,11 +332,11 @@ cd ${BUILD_DIR}/${GCC_DIR}_stage2
     --disable-shared \
     --disable-threads \
 
-make -j${NUM_PROC} 2<&1 | tee build.gcc-stage2.1.log
+${MAKE} -j${NUM_PROC} 2<&1 | tee build.gcc-stage2.1.log
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
 	exit 1;
 fi
-make install 2<&1 | tee build.gcc-stage2.2.log
+${MAKE} install 2<&1 | tee build.gcc-stage2.2.log
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
 	exit 1;
 fi

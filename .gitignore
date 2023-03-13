@@ -6,4 +6,5 @@ include/xc/
 lib/xc/
 m68k-toolchain/
 run68/run68.exe
+run68/run68
 x68k_bin/

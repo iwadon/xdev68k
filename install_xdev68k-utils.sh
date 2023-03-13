@@ -37,6 +37,15 @@
 # 未定義変数を参照したらエラーにする。
 set -eu
 
+case `uname -s` in
+    FreeBSD)
+	MAKE=gmake
+	;;
+    *)
+	MAKE=make
+	;;
+esac
+
 # 作業用テンポラリディレクトリ
 INSTALLER_TEMP_DIR=installer_temp
 
@@ -76,7 +85,7 @@ cd build
 # に従い -G"Unix Makefiles" を付加した。
 cmake -G"Unix Makefiles" ..
 
-make
+${MAKE}
 cd ../
 cd ..
 
@@ -86,26 +95,32 @@ cp -p run68mac-master/build/run68* ../run68/
 cp -p ${ARCHIVE} ../archive/download/run68mac-${ARCHIVE}
 
 
-#------------------------------------------------------------------------------
-# lha コマンドをソースからビルド
-#------------------------------------------------------------------------------
-ARCHIVE="release-20211125.zip"
-SHA512SUM="e75dc606d7637f2c506072f2f44eda69da075a57ad2dc76f54e41b1d39d34ca01410317cc6538f8ea42f4da81ca14889df1195161f4e305d2d67189ec8e60e24"
-wget -nc https://github.com/jca02266/lha/archive/refs/tags/${ARCHIVE}
-if [ $(sha512sum ${ARCHIVE} | awk '{print $1}') != ${SHA512SUM} ]; then
-	echo "SHA512SUM verification of ${ARCHIVE} failed!"
-	exit
-fi
-unzip ${ARCHIVE}
-cd lha-release-20211125/
-autoreconf -is
-sh ./configure
-make
-cd ../
+case `uname -s` in
+    Darwin)
+	LHA=lha
+	;;
+    *)
+	#------------------------------------------------------------------------------
+	# lha コマンドをソースからビルド
+	#------------------------------------------------------------------------------
+	ARCHIVE="release-20211125.zip"
+	SHA512SUM="e75dc606d7637f2c506072f2f44eda69da075a57ad2dc76f54e41b1d39d34ca01410317cc6538f8ea42f4da81ca14889df1195161f4e305d2d67189ec8e60e24"
+	wget -nc https://github.com/jca02266/lha/archive/refs/tags/${ARCHIVE}
+	if [ $(sha512sum ${ARCHIVE} | awk '{print $1}') != ${SHA512SUM} ]; then
+	    echo "SHA512SUM verification of ${ARCHIVE} failed!"
+	    exit
+	fi
+	unzip ${ARCHIVE}
+	cd lha-release-20211125/
+	autoreconf -is
+	sh ./configure
+	${MAKE}
+	cd ../
 
-# lha コマンド
-LHA=lha-release-20211125/src/lha
-
+	# lha コマンド
+	LHA=lha-release-20211125/src/lha
+	;;
+esac
 
 #------------------------------------------------------------------------------
 # HAS060.X のインストール
