@@ -12,16 +12,13 @@
 		ただし副作用として、C 標準関数の大部分が利用不能になるので、多くの
 		基本的な処理を自前で実装する必要が生じます。
 
-		本サンプルコードの起動は以下の順序で行われます。
+		本サンプルコードでは、minicrt.s をエントリポイントに設定しています。
+		以下の順序で実行されます。
 
 			1) minicrt.s からプログラムの実行が開始する。
 			2) minicrt.s から asmMain() 関数を実行する。
 			3) asmMain() 関数でコマンドライン引数を解析する。
-			4) コマンドライン引数解析結果を与えて appMain() 関数を実行する。
-
-		minicrt.s からプログラムの実行を開始させるには、minicrt.o をリンク
-		リストの先頭に指定する必要があります。詳しくは makefile を参照して
-		ください。
+			4) コマンドライン引数解析結果を与えて main() 関数を実行する。
 */
 
 #include <stdbool.h>
@@ -31,7 +28,7 @@
 #include "app.h"
 
 
-int appMain(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 	/* 引数を TTY 出力 */
 	for (int i=0; i<argc; i++) {
 		dosPrint(argv[i]);

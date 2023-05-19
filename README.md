@@ -1,24 +1,24 @@
 # xdev68k
 
 
-# 解説
+## 解説
 
 xdev68k は、SHARP X680x0 シリーズ対応のクロスコンパイル環境です。
 最新の gcc を用いて X68K 対応の実行ファイルが作成可能です。
-ホスト環境は、msys2+mingw、cygwin、linux、WSL 等々の Unix 互換環境が利用可能です（mac も恐らく利用可能ですが未検証）。
+ホスト環境は、msys+mingw、cygwin、linux、WSL 等々の Unix 互換環境が利用可能です（mac も恐らく利用可能ですが未検証）。
 
 xdev68k は、
 旧プロジェクトである x68k_gcc_has_converter（ https://github.com/yosshin4004/x68k_gcc_has_converter ）から発展したものです。
 旧プロジェクトは終了し、本プロジェクトに統合されました。
 
 
-# 環境構築手順
+## 環境構築手順
 
 1. Unix 互換環境のインストールと環境構築（作業時間 : 10 分程度）  
-	msys2+mingw、cygwin、linux、WSL 等々の Unix 互換環境を用意します。
-	ここでは、推奨環境である msys2+mingw を利用する場合のインストール手順のみを示します。
+	msys+mingw、cygwin、linux、WSL 等々の Unix 互換環境を用意します。
+	ここでは、推奨環境である msys+mingw を利用する場合のインストール手順のみを示します。
 
-	msys2 のインストーラは https://www.msys2.org/ から入手可能です。
+	msys のインストーラは https://www.msys2.org/ から入手可能です。
 	インストールが終わったら、msys のコンソール上で以下を実行し、gcc や perl 等、環境構築に必要なツールをインストールします。
 	```bash
 	pacman -S base-devel
@@ -30,6 +30,7 @@ xdev68k は、
 	pacman -S unzip
 	pacman -S cmake
 	pacman -S libiconv
+	pacman -S git
 	```
 	msys の perl は初期状態ではロケールが正しく設定されておらず、perl 起動の度に以下のように警告されます。
 	```bash
@@ -45,11 +46,15 @@ xdev68k は、
 	export LANG="en_US.UTF-8"
 	```
 	msys の bash コンソールは、スタートメニューの「MSYS2 MinGW 64bit」のショートカットから起動します。
-	ここから起動しないと、ネイティブのコンパイラ環境にパスが通った状態にならず、クロスコンパイラ構築に失敗します。  
+	ここから起動しないと、ネイティブのコンパイラ環境にパスが通った状態にならず、クロスコンパイラ構築に失敗するのでご注意下さい。
+
 	![screen_shot_gfx](https://user-images.githubusercontent.com/11882108/154822283-4b208ca4-8a69-4b34-a160-5b7845cbaa2a.png)
 
 2. xdev68k を取得（作業時間 : 1 分程度）  
 	本リポジトリを clone します。
+	```bash
+	git clone https://github.com/yosshin4004/xdev68k.git
+	```
 	以降、ディレクトリ xdev68k に clone された前提で説明を進めます。
 
 3. クロスコンパイラ作成（作業時間 : 環境によっては数時間）  
@@ -77,6 +82,9 @@ xdev68k は、
 	* HLK v3.01  
 	http://retropc.net/x68000/software/develop/lk/hlk/
 	（ファイル名 HLK301B.LZH）
+	* g2as g2lk (Charlie 版 GCC の一部)
+	http://retropc.net/x68000/software/develop/c/gcc2/
+	（ファイル名 G3_20.LZH）
 	* X68K コマンドラインエミュレータ run68  
 	https://github.com/GOROman/run68mac
 
@@ -93,12 +101,14 @@ xdev68k は、
 
 5. 環境変数設定（作業時間 : 1 分程度）  
 	環境変数 XDEV68K_DIR に、ディレクトリ xdev68k のフルパスを設定します。
-	msys2 の場合、C:/msys64/home/ユーザー名/.bashrc に次のように記述しておくと良いでしょう。
+	msys の場合、C:/msys64/home/ユーザー名/.bashrc に次のように記述しておくと良いでしょう。
 	```bash
 	export XDEV68K_DIR=ディレクトリxdev68kのフルパス
 	```
+	フルパスは、C: 等のドライブ名から始まる windows スタイルではなく、
+	/c 等から始まる unix スタイルで指定してください。
 
-# ファイル構成
+## ファイル構成
 
 正しく環境構築が完了した状態のディレクトリ構造は以下のようになります。
 ```
@@ -142,26 +152,43 @@ xdev68k/
 │	│		SHARP C Compiler PRO-68K ver2.1 のライブラリファイル
 │	└ m68k_elf/
 │		│
-│		├ license/
-│		│		libgcc のライセンス情報
-│		└ m68000/ m68020/ m68040/ m68060/ 
-│				各種 CPU 構成ごとの libgcc.a および libstdc++.a
+│		├ m68000/ m68020/ m68040/ m68060/ 
+│		│	└ *.a
+│		│			各種 CPU 構成ごとのライブラリファイル
+│		└ *.a		
+│				CPU の種類を問わないライブラリファイル
 ├ util/
 │	│
 │	├ atomic.lock
 │	│		atomic.pl で利用するロックファイル
 │	├ atomic.pl
 │	│		指定のコマンドラインをシングルスレッド実行するスクリプト
+│	├ db_pop_states.txt
+│	│		割り込み処理のステート復活を行うデバッガコマンド
+│	├ db_push_states.txt
+│	│		割り込み処理のステート退避を行うデバッガコマンド
+│	├ xeij_*.bat
+│	│		XEiJ 制御用バッチファイル
+│	├ xeij_remote_debug.sh
+│	│		XEiJ 上で指定ファイルをデバッグ実行するスクリプト
 │	└ x68k_gas2has.pl
 │			GAS to HAS コンバータ
 ├ x68k_bin/
 │	│	X68K のコマンドラインユーティリティ
 │	├ AR.X
 │	│		X68k Archiver v1.00
+│	├ DB.X
+│	│		X68k Debugger v2.00
+│	├ g2as.x
+│	│		X68k High-speed Assembler v3.08 modified for GCC
+│	├ g2lk.x
+│	│		X68k SILK Hi-Speed Linker v2.29 modified for GCC
 │	├ HAS060.X
 │	│		High-speed Assembler 68060 対応版 version 3.09+89
-│	└ hlk301.x
-│			HLK v3.01
+│	├ hlk301.x
+│	│		HLK v3.01
+│	└ MEMSIZE.X
+│			フリーメモリサイズをコンソール出力する（run68 の動作テスト用）
 ├ build_m68k-toolchain.sh
 │		クロスコンパイラのビルドスクリプト
 ├ build_x68k-libgcc.sh
@@ -172,7 +199,7 @@ xdev68k/
 		ユーティリティのインストールスクリプト
 ```
 
-# Hello World サンプルの実行
+## Hello World サンプルの実行
 
 環境構築が完了したら、
 テストを兼ねて基本サンプルをビルド＆実行してみましょう。
@@ -189,7 +216,7 @@ hello world.
 ```
 
 
-# コンパイル～実行ファイル生成までの詳細
+## コンパイル～実行ファイル生成までの詳細
 
 先ほどの Hello World サンプルのソースファイル main.c を例に、
 コンパイルから実行ファイル生成までの流れを解説します。
@@ -254,7 +281,7 @@ hello world.
 	カレントディレクトリに実行ファイル MAIN.X が生成されます。
 
 
-# GAS 形式 → HAS 形式変換例
+## GAS 形式 → HAS 形式変換例
 
 ディレクトリ xdev68k/util 以下に置かれている x68k_gas2has.pl は、
 アセンブラソースの GAS 形式 → HAS 形式変換を行うコンバータです。
@@ -315,7 +342,7 @@ ___mulsi3:                          *__mulsi3:
  rts                                * rts
 ```
 
-# ランタイムライブラリの種類と用途
+## ランタイムライブラリの種類と用途
 
 ディレクトリ xdev68k/lib/m68k_elf 以下には、
 gcc のランタイムライブラリが置かれています。
@@ -350,10 +377,10 @@ C++ベースのプロジェクトには libgcc.a と libstdc++.a をリンクす
 	68060 アクセラレータを搭載した X680x0 で動作可能な実行ファイルを作成する場合にリンクします。
 
 
-# ランタイムライブラリのリビルド手順
+## ランタイムライブラリのリビルド手順
 
 ランタイムライブラリはビルド済みの状態で本リポジトリの xdev68k/lib 以下に含まれており、
-ユーザーの手でビルドする必要はありませんが、
+ユーザーの手でビルドする必要はありません。
 もし何らかの事情でリビルドする必要がある場合は、ホスト環境の bash コンソール上でディレクトリ xdev68k に移動し、
 以下を実行します。
 ```bash
@@ -368,20 +395,22 @@ The building process is completed successfully.
 ビルド完了後は削除していただいても問題ありません。
 
 
-# 従来の X68K 対応コンパイラとの互換性問題
+## 従来の X68K 対応コンパイラとの互換性問題
 
-従来の X68K 対応コンパイラ（SHARP C Compiler PRO-68K や gcc 真里子版）と最新の m68k-elf-gcc の間には互換性問題があります。
+従来の X68K 対応コンパイラ（SHARP C Compiler PRO-68K や gcc 真里子版）と最新の m68k-elf-gcc の間には互換性問題があります。  
+※gcc2 Charlie版、gcc2.95.2 等との互換性については検証しきれていません。
 
-## 1. ABI が一致しない
+### 1. ABI が一致しない
 ABI とは Application Binary Interface の略で、
 データ型のメモリ上での配置や関数コール時の引数や戻り値の受け渡しルールを定義したものです。
 従来の X68K 対応コンパイラと最新の m68k-elf-gcc の間では ABI が一致しません。
 そのため、古いコンパイラで作成されたバイナリを再コンパイルせずリンクする場合に問題になります。
 
 * 破壊レジスタの違い（回避可能）  
+	従来の X68K 対応コンパイラと最新の m68k-elf-gcc の間で、関数呼び出し時の破壊レジスタが異なります。
 	```
-	従来の X68K 対応コンパイラ : d0-d2/a0-a2/fp0-fp1  
-	m68k-elf-gcc               : d0-d2/a0-a2/fp0-fp1  
+	SHARP C Compiler PRO-68K、gcc 真里子版 : d0-d2/a0-a2/fp0-fp1  
+	m68k-elf-gcc                           : d0-d1/a0-a1/fp0-fp1  
 	```
 	この問題は、m68k-elf-gcc 側にコンパイルオプション -fcall-used-d2 -fcall-used-a2 を指定することで解消されます。
 
@@ -406,8 +435,8 @@ ABI とは Application Binary Interface の略で、
 	64 bit 整数型である long long 型のバイナリ表現が、
 	従来の X68K 対応コンパイラと m68k-elf-gcc とで異なります。
 	```
-	従来の X68K 対応コンパイラ : 下位 32bit、上位 32bit の順に格納（つまりビッグエンディアン配置でない）  
-	m68k-elf-gcc               : 上位 32bit、下位 32bit の順に格納（厳密にビッグエンディアン配置）  
+	SHARP C Compiler PRO-68K、gcc 真里子版 : 下位 32bit、上位 32bit の順に格納（つまりビッグエンディアン配置でない）  
+	m68k-elf-gcc                           : 上位 32bit、下位 32bit の順に格納（厳密にビッグエンディアン配置）  
 	```
 	現状ではこの問題の回避策はありません。
 	（幸い、過去のソフトウェア資産上に long long 型が出現することは少なく、問題に発展することは稀。
@@ -417,33 +446,34 @@ ABI とは Application Binary Interface の略で、
 	拡張倍精度浮動小数型である long double 型のバイナリ表現が、
 	従来の X68K 対応コンパイラと m68k-elf-gcc とで異なります。
 	```
-	従来の X68K 対応コンパイラ : long double ＝ 8 bytes 型（double 型互換）  
-	m68k-elf-gcc               : long double ＝ 12 bytes 型  
+	SHARP C Compiler PRO-68K、gcc 真里子版 : long double ＝ 8 bytes 型（double 型互換）  
+	m68k-elf-gcc                           : long double ＝ 12 bytes 型  
+	※gcc2 Charlie版 も 12 bytes 型とのことです。  
 	```
 	現状ではこの問題の回避策はありません。
 	（幸い、過去のソフトウェア資産上に long double 型が出現することは少なく、問題に発展することは稀。
 	少なくとも、SHARP C Compiler PRO-68K のヘッダには出現しない。）
 
-## 2. NaN Inf 互換性問題
-最新の m68k-elf-gcc では、浮動小数の取り扱いは IEEE754 の仕様に準拠しています。
-一方 X68K の古いソフトウェア資産では、NaN や Inf 等を扱うコードが IEEE754 の仕様をフルスペックで実装されていない場合があります。
-これが原因で、最新の m68k-elf-gcc が出力したコードが古いソフトウェア資産上で正しく動作しない場合があります。
+### 2. NaN Inf 値をキャストする時の挙動が異なる
 
-この問題の再現例を示します。
-まず、
-従来の X68K 対応コンパイラ（古い X68K 移植版 gcc）で NaN Inf を発生させ、
-これらを SHARP C Compiler PRO-68K の CLIB.L に含まれる printf 関数で出力した結果を示します。
-```
-Inf (1.0f/0.0f を計算させて生成)
-	バイナリ表現      : 0x7FFFFFFF
-	printf による出力 : #NAN.000000
-NaN (0.0f/0.0f を計算させて生成)
-	バイナリ表現      : 0x7FFFFFFF
-	printf による出力 : #NAN.000000 
-```
-次に、
-最新の m68k-elf-gcc 上で NaN Inf を発生させ、
-これらを先ほどと同様に SHARP C Compiler PRO-68K の CLIB.L に含まれる printf 関数で出力した結果を示します。
+最新の m68k-elf-gcc では、
+コプロセッサを搭載していない環境向けの IEEE754 実装は、
+NaN や Inf の取り扱いを端折っており、
+IEEE754 の仕様に完全に準拠していません。
+
+この問題に遭遇する典型的な例は float → double 変換で、
+NaN や Inf の float 値を double に変換すると、不正な有限値になってしまいます。
+この変換を行っているのは、libgcc のソース fpgnulib.c に含まれる __extendsfdf2 という関数です。
+NaN や Inf の float → double 変換は、
+コンパイル時に解決される時はコンパイラ内部の IEEE754 仕様に合致した方法で処理されるため正しい結果になり、
+実行時に解決される時は __extendsfdf2 で処理されるため間違った結果になります。
+コンパイル時に解決されるかどうかは、
+gcc の気持ち次第（inline 指定された関数を実際に inline するか否かなど）で変化するため、
+結果を確実に予測することは不可能です。
+
+printf フォーマットで引数をスタックに詰む時、コンパイラは float を double 値に変換します。
+そのため float 値を printf で確認したいケースでこの問題によく遭遇します。
+実例として、最新の m68k-elf-gcc 上で NaN Inf を発生させ、printf 関数で出力した結果を示します。
 ```
 Inf (1.0f/0.0f を計算させて生成)
 	バイナリ表現      : 0x7F800000（IEEE754 の Inf としては正しい）
@@ -452,19 +482,20 @@ NaN (0.0f/0.0f を計算させて生成)
 	バイナリ表現      : 0xFFFFFFFF（IEEE754 の NaN としては正しい）
 	printf による出力 : -680564693277060000000000000000000000000.000000（正しくない）
 ```
-後者では NaN Inf が正しく表示されていません。
 
+従来の X68K 対応コンパイラ（SHARP C Compiler PRO-68K、gcc 真里子版）ではこのような問題は起きませんでした。
+同様のコードを gcc 真里子版 でコンパイルし実行した結果を示します。
 
-## 3. LIBC シンボル衝突問題
-X68K には ANSI-C 対応の基本ライブラリである LIBC（作者:Project LIBC Group）が存在しました。
+```
+Inf (1.0f/0.0f を計算させて生成)
+	バイナリ表現      : 0x7FFFFFFF
+	printf による出力 : #NAN.000000（正しい）
+NaN (0.0f/0.0f を計算させて生成)
+	バイナリ表現      : 0x7FFFFFFF
+	printf による出力 : #NAN.000000 （正しい）
+```
 
-LIBC には、
-その当時の X68K 対応 gcc 付属の ligbcc に含まれていなかった一部の数学関数（___cmpdf2）が収録されていました。
-これが、最新の m68k-elf-gcc 対応 libgcc では libgcc 側に収録されているため、
-リンク時にシンボルが衝突します。
-
-
-## 4. C/C++ 標準ヘッダの競合問題
+## C/C++ 標準ヘッダの競合問題
 include 指定されたヘッダファイルは、
 コンパイラに -I オプションで指定した検索パス上で見つかればそのファイルが include され、
 見つからない場合は、m68k-toolchain 上に存在するファイルが include されます。
@@ -494,23 +525,22 @@ m68k-elf-gcc の世代と流儀にあった C 標準ヘッダおよびライブ�
 
 
 
-# 推奨される利用スタイル
+## 推奨される利用スタイル
 
 以上をまとめると、m68k-elf-gcc の推奨される利用スタイルは以下のようになります。
 
 1. build_m68k-toolchain.sh で自力ビルドした m68k-elf-gcc を利用する。
 2. m68k-elf-gcc 側に -fcall-used-d2 -fcall-used-a2 を指定する。
-3. 本リポジトリに含まれているランタイムライブラリを利用する。
-4. 過去の資産を再コンパイルせず利用する場合は、long long 型、long double 型 を含まないものに限定する。
-5. NaN や Inf を古いコードに入力する場合、正しく処理されない可能性を考慮する。
-6. C/C++ 標準ヘッダファイルの利用は、古い世代のヘッダと新しい世代のヘッダで競合が起きないものに限定する。
+3. 過去の資産を再コンパイルせず利用する場合は、long long 型、long double 型 を含まないものに限定する。
+4. NaN や Inf を別の型にキャストするときは、正しく処理されない可能性を考慮する。
+5. C/C++ 標準ヘッダファイルの利用は、古い世代のヘッダと新しい世代のヘッダで競合が起きないものに限定する。
 
 
-# SHARP C Compiler PRO-68K 以外のライブラリ環境を利用する
+## SHARP C Compiler PRO-68K 以外のライブラリ環境を利用する
 
 install_xdev68k-utils.sh は、
 ライブラリ環境として SHARP C Compiler PRO-68K をインストールしますが、
-これは xdev68k デフォルトのライブラリ環境に過ぎず、
+これは xdev68k のデフォルトのライブラリ環境に過ぎず、
 ユーザー側で任意のものに差し替え可能です。
 ライブラリ環境の差し替えは、
 コンパイラに与えるヘッダ検索パスと、
@@ -530,17 +560,17 @@ LIBS =\
 ```
 
 
-# xdev68k によるコンパイル速度について
+## xdev68k によるコンパイル速度について
 
-## 1. ホスト環境によるコンパイル速度の違い
+### 1. ホスト環境によるコンパイル速度の違い
 xdev68k によるコンパイル速度は、ホストとなる Unix 互換環境の種類によって異なります。
 各環境のコンパイル速度を比較すると、おおむね以下のような傾向になります。
 ```bash
-linuxネイティブ >>> WSL(linuxパス上) > msys2 == cygwin >> WSL(windowsパス上) 
+linuxネイティブ >>> WSL(linuxパス上) > msys == cygwin >> WSL(windowsパス上) 
 ※mac上でのコンパイル速度は未評価です
 ```
 
-## 2. 並列コンパイルによる高速化
+### 2. 並列コンパイルによる高速化
 xdev68k によるコンパイル時間は、make の並列実行によって劇的に短縮されます。
 並列実行は、単に make コマンドに -j オプションで並列度を指定するだけ可能です。
 例えば物理 8 コアあるホスト環境では、以下のように実行すると良いでしょう。
@@ -554,7 +584,7 @@ make -j8
 ```
 make コマンドのオプションは、環境変数 MAKEFLAGS に指定しておけば、毎回コマンドライン引数として与える必要はありません。
 またホスト環境の物理コア数は、Unix 互換環境なら /proc/cpuinfo から採取可能です。
-従って、bashrc（msys2 の場合、C:/msys64/home/ユーザー名/.bashrc）に以下のような記述を入れておくことで、make の並列度を自動設定可能です。
+従って、bashrc（msys の場合、C:/msys64/home/ユーザー名/.bashrc）に以下のような記述を入れておくことで、make の並列度を自動設定可能です。
 ```bash
 # 実行環境の物理コア数から make の並列度を決定する
 export MAKEFLAGS=-j$(($(grep cpu.cores /proc/cpuinfo | sort -u | sed 's/[^0-9]//g')))
@@ -575,9 +605,167 @@ HAS や HLK などの X68K コマンドは、必ず $(ATOMIC) を経由した ru
 しかし依然として並列コンパイルによる高速化の効果は劇的であり、十分に利用する価値があります。
 
 
-# その他の制限事項
+## XEiJ と連携したデバッグ実行
 
-現状多くの制限があります。
+XEiJ https://stdkmd.net/xeij/ は、M.Kamada さんが作成されているオープンソースの X680x0 エミュレータです。
+Java 言語ベースなので様々なプラットフォーム上で実行可能です。
+XEiJ はホストマシンの任意のディレクトリを Human68k の起動ドライブにできます。
+windows 環境の場合、専用の名前付きパイプを利用することで、
+エミュレーション中の X68K に任意のコマンドを実行させることができます。
+XEiJ を利用したデバッグは、一般的なクロス開発環境におけるリモート実行を模したような動作となります。
+「ターミナルウィンドウ」と呼ばれる機能を利用することで、
+デバッグ用の printf ログ等を X68K のメイン画面ではなく、独立したウィンドウ上に出力可能です。
+
+>:warning:
+>XEiJ との連携は、現在のところ msys 以外では利用できません。
+
+### デバッグの様子
+
+サンプルコード xdev68k/example/run_xeij 実行中のスクリーンショットです。
+左上がデバッグ対象のプログラムの画面、
+左下がターミナルウィンドウになります。
+画面右側は、実行中のプログラムの解析情報を表示するウィンドウ群です。
+
+![debug_with_xeij](https://user-images.githubusercontent.com/11882108/230971524-56ba9039-d11c-4903-8738-68f743fbabe2.png)
+
+
+### 環境設定
+
+xdev68k でビルドした結果を XEiJ でデバッグ実行するには、以下のように環境設定を行う必要があります。
+
+1. XEiJ（0.23.04.10以降）のインストール  
+	公式サイトから XEiJ のアーカイブをダウンロードし展開します。  
+	https://stdkmd.net/xeij/#download  
+	XEiJ の環境設定は公式サイトをご参照ください。  
+	https://stdkmd.net/xeij/environment.htm  
+
+
+2. Human68k 起動ドライブの作成  
+	X68000 LIBRARY http://retropc.net/x68000/ から
+	「Human68k version 3.02 のシステムディスク（HUMAN302.LZH）」http://retropc.net/x68000/software/sharp/human302/
+	をダウンロードし展開します。
+	展開先のディレクトリ名は何でも良いですが、ここでは説明上 xeij_boot とします。
+	```
+	xeij_boot/ （以下、HUMAN302.LZH を展開して得られたファイル群）
+	├ ASK/
+	├ BASIC2/
+	├ BIN/
+	中略
+	├ AUTOECEC.BAT
+	以下略
+	```
+	環境変数 XEIJ_BOOT_DIR にディレクトリ xeij_boot のフルパスを設定します。
+	フルパスは、C: 等のドライブ名から始まる windows スタイルではなく、
+	/c 等から始まる unix スタイルで指定してください。
+	msys の場合、.bashrc で以下のように実行しておきます。
+	```bash
+	export XEIJ_BOOT_DIR=ディレクトリxeij_bootのフルパス
+	```
+
+	続いて、Human68k のファイル名文字数制限（8+3 文字）を緩和するため、
+	TwentyOne.x を組み込みます。
+	X68000 LIBRARY http://retropc.net/x68000/software/disk/filename/twentyone/ から
+	tw136c14.lzh をダウンロードし、ディレクトリ xeij_boot 以下に展開し、
+	xeij_boot/CONFIG.SYS に以下のような一行を追加します。
+	```
+	DEVICE = \tw136c14\TwentyOne.x +TPS
+	```
+	XEiJ 上の X68K を再起動すると、ファイル名の制限が 18+3 文字に拡張されます。
+
+
+3. ディレクトリ xdev68k を Human68k 起動ドライブ以下に配置する  
+	X68K から xdev68k 関連ファイルが見えるようにするため、
+	ディレクトリ xdev68k をディレクトリ xeij_boot 以下に配置する必要があります。
+	```
+	xeij_boot/ 
+	├ xdev68k/ （← ここに配置した）
+	├ ASK/
+	├ BASIC2/
+	├ BIN/
+	中略
+	├ AUTOECEC.BAT
+	以下略
+	```
+
+4. XEiJ を起動する  
+	ディレクトリ xeij_boot を Human68k の起動ドライブとみなして XEiJ を起動するには、
+	ホストマシンのコマンドラインから以下のように実行します。
+	```
+	java -jar XEiJ.jar -boot=xeij_boot
+	```
+
+	XEiJ が起動したら、XEiJ のメインウィンドウ上で 「設定」→「ターミナル」 を選択し、ターミナルウィンドウを開いておきます。
+	このウィンドウは、デバッグ用のログ出力ウィンドウ等に使えます。
+	他にもデバッグに役立つウィンドウが沢山用意されていますので、開いておきます。
+
+
+5. XEiJ の設定  
+	make コマンドから XEiJ を制御可能にするため、XEiJ の貼り付けパイプ機能を有効化します。
+
+	![xeij_settings](https://user-images.githubusercontent.com/11882108/231141913-1ba22a68-295d-4057-8f52-93811865ef07.png)
+
+
+6. xdev68k 上でビルド＆デバッグ実行＆中断  
+	テストを兼ねて xdev68k のサンプルコードをデバッグ実行します。
+	XEiJ を起動し、X68K 側がコマンドラインの入力待ち状態になっていることを確認した上で、
+	msys などのコンソール上でサンプルコード xdev68k/example/run_xeij のディレクトリに移動し、
+	以下のコマンドを実行します。
+	```
+	make run_xeij
+	```
+	ここまでの環境構築がうまく行っていれば、XEiJ 上でサンプルコードが実行されます。
+	デバッグを中断するには、ホスト環境（msys など）のコンソール上で Enter キーを押します。
+	中断すると、その時点のレジスタの情報、プログラムカウンタ、
+	およびプログラムカウンタが指す位置のプログラムコードがターミナルウィンドウ上に出力されます。
+
+
+### makefile 記述
+
+XEiJ によるデバッグ実行は、makefile に次のような記述を追加することで可能になります。
+```
+run_xeij : 実行ファイル名
+	bash ${XDEV68K_DIR}/util/xeij_remote_debug.sh 実行ファイル名 引数
+```
+詳しい処理内容はここでは解説しませんので、
+xdev68k/util/xeij_remote_debug.sh
+の実装をご参照ください。
+
+
+### 注意点
+
+デバッグ中のプログラムの中断は、
+ソフトウェア的に interrupt スイッチ入力を発生させることで強制的に行われます。
+このため、割り込み処理を利用したプログラムのような場合、
+割り込み停止されないままプログラムが終了されることになり、
+その後のシステムの動作が不安定になります。
+
+ゲームで良く使われる VSYNC 割り込み と ラスタ割込み については、
+xdev68k 側（xdev68k/util/xeij_remote_debug.sh）でデバッグ開始時と終了時にステートが退避・復活されるので、
+上記のような問題は発生しません。
+
+
+## トラブルシューティング
+
+xdev68k 利用者が遭遇しやすい問題と、その解決方法をまとめます。
+
+* 大きなメモリ領域の malloc に失敗する  
+	XC を利用する場合、デフォルト状態では確保可能メモリサイズは 64K バイトまでです。
+	これをハードウェア上確保可能な最大サイズに拡張するには、allmem() を実行する必要があります。
+	詳しくは example/heap_size をご参照ください。
+
+* 古い世代のコードをコンパイルすると IRTE() が未定義というエラーになる  
+	現在の gcc では割り込み関数の記述方法が変わりました。
+	詳しくは example/interrupt をご参照ください。
+
+* スーパーバイザモードから復帰するときにエラーが発生する  
+	現在の gcc では、スタック一括補正などの最適化が積極的に行われるようになった都合、
+	ユーザーモード ⇔ スーパーバイザモード 切り替え時にスタックポインタの整合性が取れなくなる場合があります。
+	回避方法など、詳しくは example/b_super をご参照ください。
+
+
+## 制限事項
+
+現状 xdev68k には多くの制限があります。
 
 * 標準 C ライブラリが未整備  
 	xdev68k がデフォルトライブラリ環境としてインストールする SHARP C Compiler PRO-68K ver2.1 は 1990 年頃のものであり、
@@ -585,16 +773,14 @@ HAS や HLK などの X68K コマンドは、必ず $(ATOMIC) を経由した ru
 	この問題を解消するには、
 	最新の glibc、BSD lib または newlib のようなものを移植する必要があります。
 
-* リモートデバッグのような機能は未整備  
-	xdev68k で現状可能なことは、
-	クロスコンパイラにより X68K の実行ファイルを生成するところまでです。
-	生成された実行ファイルを実行環境に自動でコピーしたりデバッグ実行する機能は未整備です。
-
 * IDE 環境との連携機能は未整備  
-	xdev68k と、visual studio や Eclipse のような IDE 環境と連携させる仕組みは未整備です。
+	xdev68k を、visual studio や Eclipse のような IDE 環境と連携させる仕組みは未整備です。
 
-* c++ の例外と RTTI が扱えない  
-	例外や RTTI を利用した c++ コードをコンパイルすると、
+* C++ の対応は限定的  
+	SHARP C Compiler PRO-68K ver2.1 を利用する場合、
+	デフォルトコンストラクタ/デストラクタは startup ルーチンで自動実行されないので、
+	アプリケーションが自力で行う必要があります。
+	例外や RTTI を利用した C++ コードをコンパイルすると、
 	x68k_gas2has.pl が未サポートな GAS ディレクティブが出力されるため、アセンブルに失敗します。
 	例外および RTTI を無効化するには、以下のコンパイルオプションを指定する必要があります。
 	```bash
@@ -614,7 +800,7 @@ HAS や HLK などの X68K コマンドは、必ず $(ATOMIC) を経由した ru
 	この制約により、生成された実行ファイルは、デバッガ上でのソースコード閲覧に対応できません。
 
 
-# 絶賛テスト中
+## 絶賛テスト中
 
 現在、様々な条件での動作テストを行っています。
 修正が頻繁に行われています。
@@ -624,7 +810,7 @@ HAS や HLK などの X68K コマンドは、必ず $(ATOMIC) を経由した ru
 ユーティリティやサンプルコードは頻繁に更新されています。
 何か問題に遭遇した時は、
 最新版を取得してユーティリティの再インストール（install_xdev68k-utils.sh を実行）で解消する場合があります。
-ユーティリティの再インストールだけであれば、作業時間は数分程度で完了します。
+ユーティリティの再インストールだけであれば、数分程度の作業で完了しますので、定期的に実行することをおすすめします。
 
 環境構築時のエラーや、
 アセンブラソース変換中のエラーなど、
@@ -633,7 +819,7 @@ HAS や HLK などの X68K コマンドは、必ず $(ATOMIC) を経由した ru
 （全ての問題を対処している時間的余裕は無いかもしれませんが。）
 
 
-# 謝辞
+## 謝辞
 
 xdev68k は、
 無償公開されたシャープのソフトウェア、
@@ -642,8 +828,8 @@ Free Software Foundation の gcc をはじめとするツールチェイン、
 それらのソフトウェアを作成公開して下さっている企業、組織、および有志の方々に感謝いたします。
 
 また、xdev68k で利用させていただいた X68K 関連ソフトウェア資産の多くは、
-X68000 LIBRARY http://www.retropc.net/x68000/ からダウンロードさせて頂いています。
-HAS060 の作者でもあり、アーカイブを保守されている X68000 LIBRARY の管理者 M.Kamada さんに感謝いたします。
+X68000 LIBRARY http://retropc.net/x68000/ からダウンロードさせて頂いています。
+HAS060 や XEiJ の作者でもあり、アーカイブを保守されている X68000 LIBRARY の管理者 M.Kamada さんに感謝いたします。
 
 install_xdev68k-utils.sh の *.lhz アーカイブ展開処理で、
 LHa for UNIX with Autoconf https://github.com/jca02266/lha/ 
@@ -652,13 +838,7 @@ LHa for UNIX 原作者の Tsugio Okamoto 氏、
 LHa for UNIX with Autoconf 作成者 Koji Arai 氏に感謝いたします。
 
 
-# ライセンス
-
-* x68k_gas2has.pl / atomic.pl / build_m68k-toolchain.sh / build_x68k-libgcc.sh / build_x68k-libstdc++.sh / install_xdev68k-utils.sh  
-Apache License Version 2.0 が適用されます。
-（MIT ライセンス相当の制約の緩いライセンスであり、
-かつパテント・トロール的な第三者が特許取得することを抑止することで、
-オープンソース利用者が想定外のリスクに晒されることを防止する機能を持つ優れたライセンス。）
+## ライセンス
 
 * libgcc.a および libstdc++.a  
 GNU GENERAL PUBLIC LICENSE Version 3 と、GCC RUNTIME LIBRARY EXCEPTION Version 3.1 が適用されます。
@@ -668,5 +848,11 @@ GNU GENERAL PUBLIC LICENSE Version 3 と、GCC RUNTIME LIBRARY EXCEPTION Version
 * install_xdev68k-utils.sh によりダウンロードまたはインストールされたファイル群  
 それぞれにライセンスと配布規定が存在します。
 詳細は xdev68k/license/readme.txt を参照してください。
+
+* 上記以外  
+Apache License Version 2.0 が適用されます。
+（MIT ライセンス相当の制約の緩いライセンスであり、
+かつパテント・トロール的な第三者による特許取得を抑止することで、
+オープンソース利用者が想定外のリスクに晒されることを防止する機能を持つ優れたライセンス。）
 
 

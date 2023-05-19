@@ -94,6 +94,18 @@ mkdir -p ../archive/download
 cp -p run68mac-master/build/run68* ../run68/
 cp -p ${ARCHIVE} ../archive/download/run68mac-${ARCHIVE}
 
+# run68.ini が正しく認識されていることを確認
+if [ "$(expr substr $(uname -s) 1 5)" == "MINGW" ]; then
+	MEMSIZE=`../run68/run68 ..\\\\x68k_bin\\\\MEMSIZE.X`
+else
+	MEMSIZE=`../run68/run68 ../x68k_bin/MEMSIZE.X`
+fi
+echo "available memory size on run68 is ${MEMSIZE} bytes"
+if [ ${MEMSIZE} -lt 2097152 ]; then
+	echo "run68 memory size test failed!"
+	exit 1
+fi
+
 
 case `uname -s` in
     Darwin)
@@ -108,7 +120,7 @@ case `uname -s` in
 	wget -nc https://github.com/jca02266/lha/archive/refs/tags/${ARCHIVE}
 	if [ $(sha512sum ${ARCHIVE} | awk '{print $1}') != ${SHA512SUM} ]; then
 	    echo "SHA512SUM verification of ${ARCHIVE} failed!"
-	    exit
+	    exit 1
 	fi
 	unzip ${ARCHIVE}
 	cd lha-release-20211125/
@@ -130,7 +142,7 @@ SHA512SUM="2b6947ebccc422ece82cb90b27252754a89625fbac9d9806fb774d4c70763786982ec
 wget -nc http://retropc.net/x68000/software/develop/as/has060/${ARCHIVE}
 if [ $(sha512sum ${ARCHIVE} | awk '{print $1}') != ${SHA512SUM} ]; then
 	echo "SHA512SUM verification of ${ARCHIVE} failed!"
-	exit
+	exit 1
 fi
 ${LHA} -x -w=${ARCHIVE%.*} ${ARCHIVE}
 
@@ -153,7 +165,7 @@ cp -p ${ARCHIVE} ../archive/download
 #wget -nc http://retropc.net/x68000/software/develop/lk/hlkev/${ARCHIVE}
 #if [ $(sha512sum ${ARCHIVE} | awk '{print $1}') != ${SHA512SUM} ]; then
 #	echo "SHA512SUM verification of ${ARCHIVE} failed!"
-#	exit
+#	exit 1
 #fi
 #unzip -x ${ARCHIVE}
 #
@@ -172,7 +184,7 @@ SHA512SUM="afe6b96b6b9549cbddc1215bf534b255b840249d1d14e149a06d4b50591e1ac0842b2
 wget -nc http://retropc.net/x68000/software/develop/lk/hlk/${ARCHIVE}
 if [ $(sha512sum ${ARCHIVE} | awk '{print $1}') != ${SHA512SUM} ]; then
 	echo "SHA512SUM verification of ${ARCHIVE} failed!"
-	exit
+	exit 1
 fi
 ${LHA} -x -w=${ARCHIVE%.*} ${ARCHIVE}
 
@@ -184,14 +196,34 @@ cp -p ${ARCHIVE} ../archive/download
 
 
 #------------------------------------------------------------------------------
-# C Compiler PRO-68K ver2.1（XC）から include/ lib/ AR.X をインストール
+# g2as g2lk のインストール
+#------------------------------------------------------------------------------
+ARCHIVE="G3_20.LZH"
+SHA512SUM="3a22c9c9fed1f8a5f4cb87640cb9dfaabeafec18098b12ce6e71eebcdb61f1a7571d0e17e8a5e7518466b8f243bdb1589281fd17b5fc754a3a997eb53f6848c0"
+wget -nc http://retropc.net/x68000/software/develop/c/gcc2/${ARCHIVE}
+if [ $(sha512sum ${ARCHIVE} | awk '{print $1}') != ${SHA512SUM} ]; then
+	echo "SHA512SUM verification of ${ARCHIVE} failed!"
+	exit 1
+fi
+${LHA} -x -w=${ARCHIVE%.*} ${ARCHIVE}
+
+# インストール
+mkdir -p ../x68k_bin
+mkdir -p ../archive/download
+cp -p ${ARCHIVE%.*}/g2as.x ../x68k_bin/
+cp -p ${ARCHIVE%.*}/g2lk.x ../x68k_bin/
+cp -p ${ARCHIVE} ../archive/download
+
+
+#------------------------------------------------------------------------------
+# C Compiler PRO-68K ver2.1（XC）から include/ lib/ AR.X DB.X をインストール
 #------------------------------------------------------------------------------
 ARCHIVE="XC2101.LZH"
 SHA512SUM="5746f2100a7aa8428313ccb36cdba603601eaaa131f98aba2c22016b294e50fb612930ed5edd7dbdebe2d8f12d2ff0a81eb5c7c2f37e530debb44673903809e6"
 wget -nc http://retropc.net/x68000/software/sharp/xc21/${ARCHIVE}
 if [ $(sha512sum ${ARCHIVE} | awk '{print $1}') != ${SHA512SUM} ]; then
 	echo "SHA512SUM verification of ${ARCHIVE} failed!"
-	exit
+	exit 1
 fi
 ${LHA} -x -w=${ARCHIVE%.*} ${ARCHIVE}
 
@@ -200,7 +232,7 @@ SHA512SUM="c06339be8bf3251bb0b4a37365aa013a6083294edad17a3c4fafc35ab2cd265626045
 wget -nc http://retropc.net/x68000/software/sharp/xc21/${ARCHIVE}
 if [ $(sha512sum ${ARCHIVE} | awk '{print $1}') != ${SHA512SUM} ]; then
 	echo "SHA512SUM verification of ${ARCHIVE} failed!"
-	exit
+	exit 1
 fi
 ${LHA} -x -w=${ARCHIVE%.*} ${ARCHIVE}
 
@@ -223,6 +255,7 @@ mkdir -p ../archive/download
 cp -r XC2102_02/INCLUDE/* ../include/xc
 cp -r XC2102_02/LIB/* ../lib/xc
 cp -r XC2101/BIN/AR.X ../x68k_bin
+cp -r XC2101/BIN/DB.X ../x68k_bin
 cp -p XC2101.LZH ../archive/download
 cp -p XC2102_02.LZH ../archive/download
 

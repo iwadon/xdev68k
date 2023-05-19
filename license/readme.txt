@@ -40,14 +40,15 @@
 		ライセンス原文は、オリジナルアーカイブファイルに含まれています。
 
 
-・libgcc
+・libgcc/libstdc++
 
 	オリジナルアーカイブファイル
 		build_gcc/download/gcc-10.2.0.tar.gz
 			gcc のフルパッケージ
 		xdev68k/archive/libgcc_src.tar.gz
-			gcc のフルパッケージから、libgcc.a が依存するソースファイルだけを
-			抜粋したもの。
+		xdev68k/archive/libstdc++_src.tar.gz
+			gcc のフルパッケージから、依存するソースファイルだけを抜粋した
+			もの。
 
 	xdev68k 上のインストール先
 		xdev68k/lib/m68k_elf/
@@ -60,11 +61,12 @@
 
 	利用規約
 		GNU GENERAL PUBLIC LICENSE と GCC RUNTIME LIBRARY EXCEPTION が適用
-		されます。ライセンス原文は、xdev68k/license/libgcc/ 以下にあります。
-		（libgcc.a をバイナリ単体で配布するときは GPL 適用になるため、ソース
-		コードまたはその入手手段を開示する必要がある。libgcc.a をアプリケー
-		ションにリンクして利用する場合は、アプリケーションに GPL は伝搬
-		しないし、ソース開示などの義務も生じない。）
+		されます。ライセンス原文は、xdev68k/license/libgcc_libstdc++/ 以下
+		にあります。（ライブラリファイルをバイナリ単体で配布するときは GPL
+		適用になるため、ソースコードまたはその入手手段を開示する必要がある。
+		ライブラリファイルをアプリケーションにリンクして利用する場合は、
+		アプリケーションに GPL は伝搬しないし、ソース開示などの義務も生じ
+		ない。）
 
 
 ・newlib
@@ -109,8 +111,6 @@
 				https://sourceforge.net/projects/run68/
 		mac 対応版
 			https://github.com/GOROman/run68mac
-		mac 対応版 + msys2/linux環境パッチ版
-			https://github.com/yosshin4004/run68mac
 
 	利用規約
 		GNU GENERAL PUBLIC LICENSE が適用されます。
@@ -131,7 +131,7 @@
 		xdev68k/lib/xc/
 			XC2102_02.LZH に含まれる LIB/ 以下のファイルをコピーしました。
 		xdev68k/x68k_bin
-			XC2101.LZH に含まれる AR.X をコピーしました。
+			XC2101.LZH に含まれる AR.X と DB.X をコピーしました。
 
 	提供元
 		シャープ株式会社
@@ -188,6 +188,30 @@
 
 	利用規約
 		HLK301B.LZH に含まれる readme.doc に従ってください。
+
+
+・g2as.x g2lk.x
+
+	オリジナルアーカイブファイル
+		xdev68k/archive/download/
+			G3_20.LZH
+
+	xdev68k 上のインストール先
+		xdev68k/x68k_bin
+			G3_20.LZH から取り出した g2as.x g2lk.x をコピーしています。
+
+	原作者
+		Y.Nakamura さん
+
+	作者
+		Ｃharlie さん
+
+	入手元
+		以下の URL から転載されたアーカイブが入手可能です。
+		http://retropc.net/x68000/software/develop/c/gcc2/
+
+	利用規約
+		G3_20.LZH に含まれる readme.doc に従ってください。
 
 
 ・Project C Library LIBC 1.1.32A ぱっち DON 版

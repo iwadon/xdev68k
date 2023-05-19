@@ -36,17 +36,23 @@ CFLAGS = $(COMMON_FLAGS) -Wno-builtin-declaration-mismatch -fcall-used-d2 -fcall
 CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++17
 
 # *.c ソースファイル
-C_SRCS = asm_main.c app.c dos_call.c
+C_SRCS = main.c
 
 # *.cpp ソースファイル
 CPP_SRCS = 
 
 # *.s ソースファイル
-ASM_SRCS = minicrt.s
+ASM_SRCS = 
 
 # リンク対象のライブラリファイル
 LIBS =\
+	${XDEV68K_DIR}/lib/xc/BASLIB.L \
+	${XDEV68K_DIR}/lib/xc/CLIB.L \
+	${XDEV68K_DIR}/lib/xc/DOSLIB.L \
+	${XDEV68K_DIR}/lib/xc/IOCSLIB.L \
+	${XDEV68K_DIR}/lib/xc/FLOATFNC.L \
 	${XDEV68K_DIR}/lib/m68k_elf/m$(CPU)/libgcc.a \
+	${XDEV68K_DIR}/lib/m68k_elf/m$(CPU)/libstdc++.a \
 
 # 中間ファイル生成用ディレクトリ
 INTERMEDIATE_DIR = _build/m$(CPU)
@@ -74,6 +80,10 @@ clean :
 	rm -f $(TARGET_FILES)
 	rm -rf $(INTERMEDIATE_DIR)
 
+# 実行
+run_xeij : $(EXECUTABLE)
+	bash ${XDEV68K_DIR}/util/xeij_remote_debug.sh $(EXECUTABLE)
+
 # 実行ファイルの生成
 #	HLK に長いパス文字を与えることは難しい。
 #	回避策としてリンク対象ファイルを $(INTERMEDIATE_DIR) 以下にコピーし、
@@ -88,7 +98,7 @@ $(EXECUTABLE) : $(OBJS) $(LIBS)
 		cp $$FILENAME $(INTERMEDIATE_DIR)/`basename $$FILENAME`; \
 		echo $(INTERMEDIATE_DIR)/`basename $$FILENAME` >> $(HLK_LINK_LIST); \
 	done
-	$(HLK) -i $(HLK_LINK_LIST) -o $(EXECUTABLE)
+	$(HLK) -i $(HLK_LINK_LIST) -o $(EXECUTABLE) -p $(EXECUTABLE).map
 
 # *.c ソースのコンパイル
 $(INTERMEDIATE_DIR)/%.o : %.c makefile

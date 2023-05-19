@@ -17,13 +17,13 @@ CPU = 68000
 ATOMIC = perl ${XDEV68K_DIR}/util/atomic.pl
 CXX = ${XDEV68K_DIR}/m68k-toolchain/bin/m68k-elf-g++
 CC = ${XDEV68K_DIR}/m68k-toolchain/bin/m68k-elf-gcc
-GAS2HAS = perl ${XDEV68K_DIR}/util/x68k_gas2has.pl -cpu $(CPU) -inc doscall.inc -inc iocscall.inc
+GAS2HAS = perl ${XDEV68K_DIR}/util/x68k_gas2has.pl -cpu ${CPU} -inc doscall.inc -inc iocscall.inc
 RUN68 = $(ATOMIC) ${XDEV68K_DIR}/run68/run68
 HAS = $(RUN68) ${XDEV68K_DIR}/x68k_bin/HAS060.X
 HLK = $(RUN68) ${XDEV68K_DIR}/x68k_bin/hlk301.x
 
 # 最終生成物
-EXECUTABLE = MAIN.X
+EXECUTABLE = MEMSIZE.X
 TARGET_FILES = $(EXECUTABLE)
 
 # ヘッダ検索パス
@@ -31,12 +31,12 @@ INCLUDE_FLAGS = -I${XDEV68K_DIR}/include/xc -I${XDEV68K_DIR}/include/xdev68k
 
 
 # コンパイルフラグ
-COMMON_FLAGS = -m$(CPU) -Os $(INCLUDE_FLAGS)
+COMMON_FLAGS = -m${CPU} -Os $(INCLUDE_FLAGS)
 CFLAGS = $(COMMON_FLAGS) -Wno-builtin-declaration-mismatch -fcall-used-d2 -fcall-used-a2 -finput-charset=cp932 -fexec-charset=cp932 -fverbose-asm
 CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++17
 
 # *.c ソースファイル
-C_SRCS = asm_main.c app.c dos_call.c
+C_SRCS = asm_main.c dos_call.c
 
 # *.cpp ソースファイル
 CPP_SRCS = 
@@ -45,11 +45,13 @@ CPP_SRCS =
 ASM_SRCS = minicrt.s
 
 # リンク対象のライブラリファイル
+#	${XDEV68K_DIR}/lib/xc/CLIB.L \
+#
 LIBS =\
-	${XDEV68K_DIR}/lib/m68k_elf/m$(CPU)/libgcc.a \
+	${XDEV68K_DIR}/lib/m68k_elf/m${CPU}/libgcc.a \
 
 # 中間ファイル生成用ディレクトリ
-INTERMEDIATE_DIR = _build/m$(CPU)
+INTERMEDIATE_DIR = _build/m${CPU}
 
 # オブジェクトファイル
 OBJS =	$(addprefix $(INTERMEDIATE_DIR)/,$(patsubst %.c,%.o,$(C_SRCS))) \
