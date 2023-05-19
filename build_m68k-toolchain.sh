@@ -219,7 +219,7 @@ tar xvf ${GCC_ARCHIVE} -C ${SRC_DIR}
 #	応急処置として、問題を起こす行を除去する。
 #	abort() は stdlib.h 内で宣言された実装のままの挙動となる。
 #
-if [ "$(expr substr $(uname -s) 1 5)" == "MINGW" ]; then
+if [ "$(uname -s | cut -c 1-5)" == "MINGW" ]; then
 	cat ${SRC_DIR}/${GCC_DIR}/gcc/system.h |\
 	perl -e 'my $before="#define abort() fancy_abort (__FILE__, __LINE__, __FUNCTION__)";my $after="/* $before */";$before=quotemeta($before);while(<>){$_=~s/$before/$after/g;print $_;}' > ${SRC_DIR}/${GCC_DIR}/gcc/system.h.tmp;
 	mv ${SRC_DIR}/${GCC_DIR}/gcc/system.h.tmp ${SRC_DIR}/${GCC_DIR}/gcc/system.h
